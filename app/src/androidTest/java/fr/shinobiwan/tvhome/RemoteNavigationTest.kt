@@ -11,18 +11,18 @@ import org.junit.Test
 class RemoteNavigationTest {
     @get:Rule val compose=createAndroidComposeRule<MainActivity>()
     @Test fun settingsCanBeReachedAndClosedWithRemote(){
-        compose.onNodeWithText("Paramètres").assertExists().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus)
-        compose.onNodeWithText("Paramètres").performKeyInput{pressKey(Key.DirectionCenter)}
+        compose.onNodeWithText("Réglages").assertExists().performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus)
+        compose.onNodeWithText("Réglages").performKeyInput{pressKey(Key.DirectionCenter)}
         compose.onNodeWithText("Votre TV, à votre façon.").assertIsDisplayed()
         compose.onNodeWithText("Retour",useUnmergedTree=true).performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus)
         compose.onNodeWithText("Retour",useUnmergedTree=true).performKeyInput{pressKey(Key.DirectionCenter)}
-        compose.onNodeWithText("Paramètres").assertIsDisplayed()
+        compose.onNodeWithText("Réglages").assertIsDisplayed()
     }
     @Test fun eachDirectionKeepsAnAccessibleSettingsEscape(){
-        compose.onNodeWithText("Paramètres").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus)
-        compose.onNodeWithText("Paramètres").performKeyInput{
+        compose.onNodeWithText("Réglages").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.RequestFocus)
+        compose.onNodeWithText("Réglages").performKeyInput{
             pressKey(Key.DirectionDown);pressKey(Key.DirectionLeft);pressKey(Key.DirectionRight);pressKey(Key.DirectionUp)
         }
-        compose.onNodeWithText("Paramètres").assertExists()
+        compose.onNodeWithText("Réglages").assertExists()
     }
 }

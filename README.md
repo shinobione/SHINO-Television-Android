@@ -1,4 +1,19 @@
-# SHINO // TV HOME v0.1
+# SHINO // TV HOME
+
+## Version actuelle : v0.2 — Premium TV Experience
+
+Refonte native Compose : identité et heure agrandies, météo réunie dans le bandeau, applications par pages de cinq tuiles complètes, bannières TV natives, widgets différenciés et détails accessibles au D-pad. Le modèle métier, le cache et les préférences existants sont conservés.
+
+- APK v0.2 : `artifacts/v0.2/SHINO-TV-HOME-v0.2-debug.apk`.
+- [Rapport v0.2 et mise à jour](docs/V0.2-REPORT.md).
+- Rendus du même code Compose sur Android API29 simulé par Robolectric : `artifacts/v0.2/native/`. Ce ne sont pas des captures de la Freebox ; applications et médias des tests sont synthétiques.
+- Galerie locale : `artifacts/v0.2/preview.html`.
+- `preview/index.html` reste l'ancienne maquette HTML v0.1, pas la référence v0.2.
+- Compilation : `.\build-local.ps1` ; vérification séparée : `.\verify-build.ps1` (sorties v0.2, aucun écrasement du livrable v0.1).
+
+La v0.2 n'est ni installée ni lancée automatiquement sur la Pop. Une nouvelle autorisation est requise pour chaque opération matérielle. Le binaire v0.1 installé reste inchangé.
+
+## Référence v0.1 et documentation existante
 
 Application Android TV personnelle, indépendante de SHINO SmallTV. Kotlin + Compose for TV. Package `fr.shinobiwan.tvhome`, Android 8.0/API 26 minimum, SDK cible 35. **Application LEANBACK standard, pas un remplacement HOME.**
 
@@ -11,6 +26,8 @@ Racine : `C:\Users\jerry\Documents\SHINO Television Android`
 - APK : `artifacts\SHINO-TV-HOME-v0.1-debug.apk`
 - Rapport : [docs/VALIDATION.md](docs/VALIDATION.md)
 - Installation et retour : [docs/INSTALLATION.md](docs/INSTALLATION.md)
+- Préparation Freebox Pop / ADB réseau / USB : [docs/HARDWARE-VALIDATION.md](docs/HARDWARE-VALIDATION.md)
+- Audit Windows pour v0.2 : [docs/V0.2-INTEGRATION-AUDIT.md](docs/V0.2-INTEGRATION-AUDIT.md)
 - Appairage et contrat : [docs/PAIRING.md](docs/PAIRING.md), [snapshot.schema.json](companion/windows/snapshot.schema.json)
 - Passerelle : [companion/windows/gateway.py](companion/windows/gateway.py)
 - Audit : [docs/AUDIT.md](docs/AUDIT.md)

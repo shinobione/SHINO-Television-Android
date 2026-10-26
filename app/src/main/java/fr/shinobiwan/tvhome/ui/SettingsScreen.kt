@@ -37,15 +37,15 @@ import kotlinx.coroutines.delay
     LaunchedEffect(Unit){delay(100);first.requestFocus()}
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=40.dp,vertical=24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-            Text("Votre TV, à votre façon.",fontSize=28.sp)
+            Text("Votre TV, à votre façon.",fontSize=32.sp)
             Action("Retour",onClose,Modifier.focusRequester(first))
         }
-        Text("Application TV standard · Projectivy reste votre accueil de secours",color=Muted,fontSize=13.sp)
+        Text("Application TV standard · Projectivy reste votre accueil de secours",color=Muted,fontSize=17.sp)
         Eyebrow("HORLOGE & MÉTÉO")
         Entry("Ville · Open-Meteo",draft.city,{draft=draft.copy(city=it.take(80))})
-        Text("Heure et dates : Europe/Paris · les données météo demandent Internet",color=Muted,fontSize=11.sp)
+        Text("Heure et dates : Europe/Paris · les données météo demandent Internet",color=Muted,fontSize=16.sp)
         Eyebrow("APPAIRAGE PC · HTTPS SUR LE RÉSEAU LOCAL")
-        Text("Comparer l'empreinte directement sur le PC. Aucun identifiant OpenAI ne doit être saisi ici.",color=Muted,fontSize=12.sp)
+        Text("Comparer l'empreinte directement sur le PC. Aucun identifiant OpenAI ne doit être saisi ici.",color=Muted,fontSize=16.sp)
         Row(horizontalArrangement=Arrangement.spacedBy(16.dp)){
             Entry("IPv4 privée du PC",draft.host,{draft=draft.copy(host=it.trim().take(15))},Modifier.weight(2f))
             Entry("Port",draft.port,{draft=draft.copy(port=it.filter(Char::isDigit).take(5))},Modifier.weight(1f),numeric=true)
@@ -56,16 +56,17 @@ import kotlinx.coroutines.delay
             draft=draft.copy(host="",pin="",encryptedToken="");token="";model.save(draft)
         })
         Eyebrow("WIDGETS · UN À TROIS VISIBLES")
+        Text("Horloge et météo restent réunies dans le bandeau principal.", fontSize=16.sp, color=Muted)
         Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
             WidgetRegistry.definitions.forEach{(id,definition)->
-                Action("${if(id in draft.widgets)"✓ " else "+ "}${definition.title}",{
-                    if(id in draft.widgets){if(draft.widgets.size>1)draft=draft.copy(widgets=draft.widgets-id)}
-                    else if(draft.widgets.size<3)draft=draft.copy(widgets=draft.widgets+id)
+                Action("${if(id in homeWidgetIds(draft.widgets))"✓ " else "+ "}${definition.title}",{
+                    if(id in homeWidgetIds(draft.widgets)){if(homeWidgetIds(draft.widgets).size>1)draft=draft.copy(widgets=draft.widgets-id)}
+                    else if(homeWidgetIds(draft.widgets).size<3)draft=draft.copy(widgets=homeWidgetIds(draft.widgets)+id)
                     else error="Trois widgets maximum : retirez un widget d'abord."
                 })
             }
         }
-        Action("Faire tourner l'ordre des widgets",{if(draft.widgets.size>1)draft=draft.copy(widgets=draft.widgets.drop(1)+draft.widgets.first())})
+        Action("Faire tourner l'ordre des widgets",{val ids=homeWidgetIds(draft.widgets);if(ids.size>1)draft=draft.copy(widgets=ids.drop(1)+ids.first())})
         Eyebrow("NOW PLAYING")
         Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
             for(source in listOf("AUTO","TV","PC"))Action("${if(source==draft.mediaSource)"✓ " else ""}$source",{draft=draft.copy(mediaSource=source)})
@@ -74,12 +75,12 @@ import kotlinx.coroutines.delay
                 catch(_:Exception){error="Réglage indisponible sur cet appareil ; la source PC reste possible."}
             })
         }
-        Text("Aucune permission activée automatiquement. Les métadonnées dépendent des applications. La source PC est en lecture seule.",fontSize=11.sp,color=Muted)
+        Text("Aucune permission activée automatiquement. Les métadonnées dépendent des applications. La source PC est en lecture seule.",fontSize=16.sp,color=Muted)
         Eyebrow("APPLICATIONS TV INSTALLÉES · ORDRE & VISIBILITÉ")
-        if(apps.isEmpty())Text("Aucune application TV détectée sur cet appareil.",color=Muted,fontSize=13.sp)
+        if(apps.isEmpty())Text("Aucune application TV détectée sur cet appareil.",color=Muted,fontSize=17.sp)
         apps.forEachIndexed{index,app->
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-                Text(app.label,modifier=Modifier.weight(1f).padding(vertical=10.dp),fontSize=15.sp)
+                Text(app.label,modifier=Modifier.weight(1f).padding(vertical=10.dp),fontSize=16.sp)
                 Action(if(app.packageName in draft.hidden)"Afficher" else "Masquer",{
                     draft=draft.copy(hidden=if(app.packageName in draft.hidden)draft.hidden-app.packageName else draft.hidden+app.packageName)
                 })
@@ -97,9 +98,9 @@ import kotlinx.coroutines.delay
             Action("Paramètres Android",{try{context.startActivity(Intent(AndroidSettings.ACTION_SETTINGS))}catch(_:Exception){error="Paramètres Android indisponibles"}})
             Action("Actualiser le PC",model::sync)
         }
-        Text("Android ${android.os.Build.VERSION.RELEASE} · API ${android.os.Build.VERSION.SDK_INT} · ${android.os.Build.MODEL}",color=Muted,fontSize=11.sp)
-        Text("DEMO affiche des quotas et un morceau fictifs identifiés. Aucun faux raccourci ni donnée matérielle simulée.",color=Muted,fontSize=11.sp)
-        if(error.isNotBlank())Text(error,color=Color(0xFFFFAD79),fontSize=13.sp)
+        Text("Android ${android.os.Build.VERSION.RELEASE} · API ${android.os.Build.VERSION.SDK_INT} · ${android.os.Build.MODEL}",color=Muted,fontSize=16.sp)
+        Text("DEMO affiche des quotas et un morceau fictifs identifiés. Aucun faux raccourci ni donnée matérielle simulée.",color=Muted,fontSize=16.sp)
+        if(error.isNotBlank())Text(error,color=Color(0xFFFFAD79),fontSize=17.sp)
         Action("Enregistrer et revenir à l'accueil",{
             val pin=draft.pin.replace(":","").replace(" ","")
             error=when{
@@ -119,11 +120,11 @@ import kotlinx.coroutines.delay
 @Composable private fun Entry(label:String,value:String,onChange:(String)->Unit,modifier:Modifier=Modifier,secret:Boolean=false,numeric:Boolean=false){
     var focused by remember{mutableStateOf(false)}
     Column(modifier){
-        Text(label,fontSize=11.sp,color=Muted)
+        Text(label,fontSize=16.sp,color=Muted)
         Spacer(Modifier.height(5.dp))
         BasicTextField(value,onChange,modifier=Modifier.fillMaxWidth().onFocusChanged{focused=it.isFocused}
             .border(if(focused)2.dp else 1.dp,if(focused)Violet else Color(0xFF4D4359),RoundedCornerShape(8.dp)).background(Panel,RoundedCornerShape(8.dp)).padding(12.dp),
-            singleLine=true,textStyle=TextStyle(color=Color.White,fontSize=16.sp),cursorBrush=SolidColor(Violet),
+            singleLine=true,textStyle=TextStyle(color=Color.White,fontSize=19.sp),cursorBrush=SolidColor(Violet),
             visualTransformation=if(secret)PasswordVisualTransformation()else VisualTransformation.None,
             keyboardOptions=KeyboardOptions(keyboardType=if(secret)KeyboardType.Password else if(numeric)KeyboardType.Number else KeyboardType.Text))
     }

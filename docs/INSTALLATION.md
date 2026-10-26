@@ -1,5 +1,7 @@
 # Installation de développement et retour
 
+Pour la procédure détaillée Freebox Pop, les variantes ADB/clé USB et l'état réel des essais, utiliser [HARDWARE-VALIDATION.md](HARDWARE-VALIDATION.md). Les blocs ci-dessous restent des exemples non exécutés ; `install -r` concerne une mise à jour autorisée, pas une première installation automatique.
+
 **Ces étapes sont fournies pour exécution humaine. Aucune installation sur la Freebox n'a été effectuée.** Préserver Projectivy, ses réglages et le launcher Free. Ne désactiver aucun package.
 
 ## Préparer

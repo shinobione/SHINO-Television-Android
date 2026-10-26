@@ -1,5 +1,7 @@
 # Validation — SHINO // TV HOME v0.1
 
+Rapport du premier build. Pour les nouvelles vérifications d'intégrité, les procédures Freebox et les alternatives d'émulation stable trouvées ensuite, voir [HARDWARE-VALIDATION.md](HARDWARE-VALIDATION.md). Le blocage rencontré avec l'image API 30 ne signifie pas qu'une licence Preview est indispensable à toute émulation TV.
+
 **GO : livraison locale du projet et de l'APK debug. HOLD : installation et validation Freebox, ouverture LAN et permissions spéciales.**
 
 Le build est réel. L'application Android n'a pas été lancée sur appareil ni émulateur ; sa navigation et son rendu natif ne sont pas déclarés validés. L'aperçu HTML est une composition statique distincte, visuellement inspectée dans le navigateur.

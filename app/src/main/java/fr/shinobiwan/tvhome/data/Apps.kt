@@ -8,7 +8,7 @@ import android.graphics.Canvas
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-data class TvApp(val packageName:String, val label:String, val icon:Bitmap?)
+data class TvApp(val packageName:String, val label:String, val icon:Bitmap?, val banner:Bitmap? = null)
 class Apps(private val context:Context) {
     suspend fun installed():List<TvApp> = withContext(Dispatchers.IO) {
         val pm=context.packageManager
@@ -19,7 +19,19 @@ class Apps(private val context:Context) {
                 val drawable=info.loadIcon(pm)
                 Bitmap.createBitmap(96,96,Bitmap.Config.ARGB_8888).also { drawable.setBounds(0,0,96,96); drawable.draw(Canvas(it)) }
             } catch (_:Exception){null}
-            TvApp(info.activityInfo.packageName,info.loadLabel(pm).toString(),bitmap)
+            val banner = try {
+                val drawable = info.activityInfo.loadBanner(pm)
+                drawable?.let {
+                    val width = it.intrinsicWidth.coerceAtLeast(1)
+                    val height = it.intrinsicHeight.coerceAtLeast(1)
+                    val scale = minOf(1f, 480f / width, 270f / height)
+                    val out = Bitmap.createBitmap((width * scale).toInt().coerceAtLeast(1), (height * scale).toInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+                    it.setBounds(0, 0, out.width, out.height)
+                    it.draw(Canvas(out))
+                    out
+                }
+            } catch (_: Exception) { null }
+            TvApp(info.activityInfo.packageName,info.loadLabel(pm).toString(),bitmap,banner)
         }.distinctBy { it.packageName }.sortedBy { it.label.lowercase() }
     }
     fun launch(packageName:String):Boolean=try {
