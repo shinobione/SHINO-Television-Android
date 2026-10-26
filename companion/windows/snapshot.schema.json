@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SHINO TV HOME snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "codex", "media", "telemetry"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "codex": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "capturedAt", "source", "activity", "fiveHour", "weekly"],
+      "properties": {
+        "status": {"enum": ["AVAILABLE", "STALE", "UNAVAILABLE"]},
+        "capturedAt": {"type": ["string", "null"], "format": "date-time"},
+        "source": {"const": "PERISCOPE_HISTORY"},
+        "activity": {"const": "UNVERIFIED"},
+        "fiveHour": {"$ref": "#/$defs/quota"},
+        "weekly": {"$ref": "#/$defs/quota"}
+      }
+    },
+    "media": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "source"],
+      "properties": {
+        "status": {"enum": ["AVAILABLE", "EMPTY", "UNAVAILABLE"]}, "source": {"const": "PC"},
+        "title": {"type": "string", "maxLength": 256}, "artist": {"type": "string", "maxLength": 256},
+        "app": {"type": "string", "maxLength": 128}, "playing": {"type": "boolean"},
+        "positionMs": {"type": "integer", "minimum": 0}, "durationMs": {"type": "integer", "minimum": 0},
+        "artwork": {"type": "null"}
+      }
+    },
+    "telemetry": {
+      "type": "object", "additionalProperties": false, "required": ["status"],
+      "properties": {
+        "status": {"enum": ["AVAILABLE", "UNAVAILABLE"]},
+        "cpuPercent": {"type": "number", "minimum": 0, "maximum": 100},
+        "ramUsedGb": {"type": "number", "minimum": 0, "maximum": 65536},
+        "gpuPercent": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+        "gpuTemperatureC": {"type": ["number", "null"], "minimum": -40, "maximum": 150}
+      }
+    }
+  },
+  "$defs": {
+    "quota": {"type": ["object", "null"], "additionalProperties": false,
+      "required": ["remainingPercent", "resetsAt"],
+      "properties": {"remainingPercent": {"type": "number", "minimum": 0, "maximum": 100}, "resetsAt": {"type": ["string", "null"], "format": "date-time"}}
+    }
+  }
+}

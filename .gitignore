@@ -1,0 +1,12 @@
+.local-build/
+.gradle/
+**/build/
+local.properties
+*.keystore
+*.jks
+*.pem
+*.key
+__pycache__/
+*.pyc
+private/
+artifacts/
