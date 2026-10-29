@@ -18,12 +18,16 @@ data class Quota(val remaining: Double, val resetsAt: Instant?) {
 }
 data class Media(val status: String = "UNAVAILABLE", val source: String = "PC", val title: String = "",
     val artist: String = "", val app: String = "", val playing: Boolean = false,
-    val positionMs: Long = 0, val durationMs: Long = 0, val artwork: android.graphics.Bitmap? = null,
-    val canPlayPause: Boolean = false, val canNext: Boolean = false)
+    val positionMs: Long? = null, val durationMs: Long? = null, val artwork: android.graphics.Bitmap? = null,
+    val canPlayPause: Boolean = false, val canNext: Boolean = false,
+    val playbackState: String = if (playing) "PLAYING" else "PAUSED", val quality: String = "")
 data class Telemetry(val cpu: Double?, val gpu: Double?, val ramGb: Double?, val gpuC: Double?)
 data class Snapshot(val generatedAt: Instant, val capturedAt: Instant?, val status: String,
     val five: Quota?, val week: Quota?, val activity: String = "UNVERIFIED",
-    val media: Media = Media(), val telemetry: Telemetry? = null)
+    val media: Media = Media(), val telemetry: Telemetry? = null,
+    val sampleKind: String = "LIVE", val telemetryMeta: DomainMeta? = null,
+    val mediaMeta: DomainMeta? = null, val codexMeta: DomainMeta? = null,
+    val reliability: String = "UNVERIFIED", val artworkReference: ArtworkReference? = null)
 data class Weather(val city: String, val celsius: Double, val code: Int, val observedAt: Instant, val fetchedAt: Instant)
 
 fun isLanIpv4(host: String): Boolean {

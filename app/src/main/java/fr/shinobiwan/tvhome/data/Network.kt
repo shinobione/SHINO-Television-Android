@@ -27,15 +27,17 @@ fun readLimited(connection: java.net.HttpURLConnection): String {
     } finally { connection.disconnect() }
 }
 class BridgeClient(private val context: Context) {
+    private val hub=HubClient(context)
     private val cache get()=File(context.filesDir,"snapshot-v1.json")
     private fun identity(s: Settings): String = MessageDigest.getInstance("SHA-256").digest("${s.host}|${s.port}|${s.pin}|${s.encryptedToken}".toByteArray()).joinToString("") { "%02x".format(it.toInt() and 255) }
     fun cached(s: Settings): Snapshot? = try {
-        if(cache.length()>MAX_BYTES) null else {
+        if(s.protocol=="HUB_V2") hub.cached(s) else if(cache.length()>MAX_BYTES) null else {
             val stored=JSONObject(cache.readText())
             if(stored.getString("pairing")!=identity(s)) null else parseSnapshot(stored.getJSONObject("snapshot").toString())
         }
     } catch (_: Exception) { null }
     suspend fun fetch(s: Settings, secret: String): Snapshot = withContext(Dispatchers.IO) {
+        if(s.protocol=="HUB_V2") return@withContext hub.fetch(s,secret)
         require(isLanIpv4(s.host)); require(s.port.toIntOrNull() in 1024..65535)
         val pin=s.pin.lowercase().replace(":","").replace(" ","")
         require(pin.matches(Regex("[0-9a-f]{64}")))
@@ -67,7 +69,7 @@ class BridgeClient(private val context: Context) {
         tmp.writeText(JSONObject().put("pairing",identity(s)).put("snapshot",JSONObject(raw)).toString()); check(tmp.renameTo(cache))
         result
     }
-    fun clearCache() { cache.delete() }
+    fun clearCache() { cache.delete();hub.clearCache() }
 }
 class WeatherClient(private val context: Context) {
     private val cache get()=File(context.filesDir,"weather-v1.json")

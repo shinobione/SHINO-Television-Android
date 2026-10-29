@@ -24,6 +24,7 @@ class HomeViewModel(application:Application):AndroidViewModel(application) {
     private var syncing:Job?=null
     private var weatherJob:Job?=null
     private var loaded=false
+    private var blockedPairing: String?=null
     init {
         viewModelScope.launch(Dispatchers.IO) {
             val cachedWeather=weather.cached()
@@ -31,8 +32,8 @@ class HomeViewModel(application:Application):AndroidViewModel(application) {
         }
         viewModelScope.launch { preferences.flow.collect { settings ->
             val old=mutable.value.settings
-            val changed=loaded && (old.host!=settings.host||old.port!=settings.port||old.pin!=settings.pin||old.encryptedToken!=settings.encryptedToken)
-            if(changed) { syncing?.cancelAndJoin(); withContext(Dispatchers.IO){bridge.clearCache()} }
+            val changed=loaded && pairingIdentity(old)!=pairingIdentity(settings)
+            if(changed) { syncing?.cancelAndJoin(); blockedPairing=null;withContext(Dispatchers.IO){bridge.clearCache()} }
             val initialCache=if(!loaded)withContext(Dispatchers.IO){bridge.cached(settings)}else null
             mutable.update { it.copy(settings=settings,snapshot=if(changed)null else initialCache?:it.snapshot,online=if(changed)false else it.online) }
             loaded=true
@@ -40,19 +41,21 @@ class HomeViewModel(application:Application):AndroidViewModel(application) {
         } }
         viewModelScope.launch { tv.flow.collect { media -> mutable.update { it.copy(tvMedia=media) } } }
         viewModelScope.launch { while(isActive) { delay(1000); if(active)mutable.update { it.copy(now=Instant.now()) } } }
-        viewModelScope.launch { while(isActive){delay(60000);if(active){sync();refreshWeather()}} }
+        viewModelScope.launch { while(isActive){delay(3000);if(active && mutable.value.settings.protocol=="HUB_V2")sync(false)} }
+        viewModelScope.launch { while(isActive){delay(60000);if(active){if(mutable.value.settings.protocol!="HUB_V2")sync(false);refreshWeather()}} }
         viewModelScope.launch { while(isActive){delay(3000);if(active)withContext(Dispatchers.IO){tv.refresh()}} }
     }
     fun resume(){
         active=true
         viewModelScope.launch { val found=apps.installed(); mutable.update { it.copy(apps=found,now=Instant.now()) } }
         viewModelScope.launch(Dispatchers.IO){tv.refresh()}
-        if(loaded){sync();refreshWeather()}
+        if(loaded){sync(false);refreshWeather()}
     }
     fun pause(){ active=false; syncing?.cancel();weatherJob?.cancel();mutable.update { it.copy(online=false) } }
-    fun sync(){
+    fun sync(manual: Boolean = true){
         if(syncing?.isActive==true)return
         val settings=mutable.value.settings
+        if(!manual && blockedPairing==pairingIdentity(settings))return
         if(settings.demo||settings.host.isBlank()){mutable.update{it.copy(online=false)};return}
         syncing=viewModelScope.launch {
             try {
@@ -61,7 +64,11 @@ class HomeViewModel(application:Application):AndroidViewModel(application) {
                 if(mutable.value.settings.host==settings.host && mutable.value.settings.encryptedToken==settings.encryptedToken)
                     mutable.update { it.copy(snapshot=result,online=true,message="") }
             } catch(e:CancellationException){throw e}
-            catch (_:Exception){mutable.update { it.copy(online=false,message="Passerelle inaccessible ou appairage non valide") }}
+            catch(e:HubFailure){
+                if(e.pairingRequired || e.kind=="CONFIGURATION" || e.kind=="TLS")blockedPairing=pairingIdentity(settings)
+                mutable.update { it.copy(online=e.kind=="NO_DATA",snapshot=if(e.kind=="NO_DATA")null else it.snapshot,message=e.messageForUser) }
+            }
+            catch (_:Exception){mutable.update { it.copy(online=false,message="Passerelle inaccessible ou données non valides · cache conservé") }}
         }
     }
     private fun refreshWeather(){
@@ -92,8 +99,9 @@ class HomeViewModel(application:Application):AndroidViewModel(application) {
     fun nextMedia(){tv.next()}
     fun preferredMedia(s:HomeState):Media {
         val pc=s.snapshot?.media?:Media()
-        val usablePc=s.online && s.snapshot?.generatedAt?.let { it > s.now.minusSeconds(120) && it <= s.now.plusSeconds(120) }==true
-        val reliablePc=if(usablePc)pc else Media(source="PC")
+        val meta=s.snapshot?.mediaMeta
+        val usablePc=if(meta!=null) s.online && meta.isCurrent(s.now) else s.online && s.snapshot?.generatedAt?.let { it > s.now.minusSeconds(120) && it <= s.now.plusSeconds(120) }==true
+        val reliablePc=if(usablePc)pc else if(meta!=null && pc.status=="AVAILABLE")pc.copy(playing=false,quality=meta.label(s.now,s.online)) else Media(source="PC")
         return when(s.settings.mediaSource){
             "TV"->s.tvMedia
             "PC"->reliablePc

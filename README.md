@@ -1,6 +1,28 @@
 # SHINO // TV HOME
 
-## Version actuelle : v0.2 — Premium TV Experience
+## Version actuelle : v2.0.0 — SHINO HUB v2
+
+Application Android TV existante conservée, package `fr.shinobiwan.tvhome`, code 3.
+Connexion HTTPS au HUB par `GET /hub/v1/snapshot`, domaines PC/musique/Codex
+indépendants, pochette JPEG authentifiée, fraîcheur par domaine et quotas
+indisponibles affichés honnêtement. Horloge, météo, applications et D-pad conservés.
+
+- APK debug local : `artifacts/v2/SHINO-TV-HOME-v2-debug.apk`.
+- [Appairage HUB v2](docs/V2-PAIRING.md) et [livraison/validation](docs/V2-DELIVERY.md).
+- CA publique, pin SHA-256 et jeton **lecteur TV_HOME** à renseigner dans Réglages.
+  Aucun secret réel ni certificat personnel n'est distribué avec les sources/APK.
+- Valeurs par défaut HUB : `192.168.1.195:8767`. Le mode passerelle v1 reste
+  disponible ; les installations ayant déjà un appairage gardent leur mode v1.
+- L'état musique distingue Lecture/Pause/Arrêté. Le HUB étant en lecture seule,
+  les boutons de contrôle distant PC ne sont pas proposés. Les commandes TV
+  existantes restent disponibles lorsque l'application média les autorise.
+- Build : `.\build-local.ps1` ; vérification :
+  `.\verify-build.ps1 -ArtifactTag v2 -Version 2.0.0 -VersionCode 3`.
+
+Aucune installation ni aucun lancement automatique sur Freebox Pop.
+Les anciens documents ci-dessous décrivent leurs versions historiques.
+
+## Historique : v0.2 — Premium TV Experience
 
 Refonte native Compose : identité et heure agrandies, météo réunie dans le bandeau, applications par pages de cinq tuiles complètes, bannières TV natives, widgets différenciés et détails accessibles au D-pad. Le modèle métier, le cache et les préférences existants sont conservés.
 

@@ -76,6 +76,38 @@ class NativeHomeTest {
         compose.onNodeWithText("DEMO · données fictives").assertIsDisplayed()
         frame("native-api29-three-widgets.png")
     }
+    @Test fun hubTelemetryMusicAndSyntheticSourceAreVisible() {
+        val at=Instant.parse("2026-10-26T12:00:00Z")
+        val transcript=org.json.JSONObject(javaClass.getResource("/hub-scenario-test.json")!!.readText()).getJSONArray("steps")
+        val body=(0 until transcript.length()).map { transcript.getJSONObject(it).getJSONObject("body") }.first { it.optInt("schemaVersion")==2 }
+        val snapshot=parseHubSnapshot(body.toString())
+        val testState=state().copy(settings=state().settings.copy(widgets=listOf("telemetry","media","codex")),snapshot=snapshot,online=true,now=at)
+        val art=Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888).apply { eraseColor(android.graphics.Color.MAGENTA) }
+        show(testState,media=snapshot.media.copy(artwork=art))
+        compose.onNodeWithText("TEST · données synthétiques du HUB").assertIsDisplayed()
+        compose.onNodeWithText("GPU 45 °C").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Pochette").assertIsDisplayed()
+        assertTextFits("${snapshot.reliability} · À jour · à l'instant")
+        frame("native-api29-hub-v2-test.png")
+    }
+    @Test fun telemetryOnlyStillFitsItsCard() {
+        val meta=DomainMeta(now,"AVAILABLE","CURRENT",6,"DIRECT")
+        val snapshot=Snapshot(now,null,"UNAVAILABLE",null,null,telemetry=Telemetry(20.0,10.0,8.0,45.0),telemetryMeta=meta)
+        val testState=state().copy(settings=state().settings.copy(widgets=listOf("telemetry")),snapshot=snapshot,online=true)
+        show(testState)
+        val card=compose.onNodeWithTag("widget-telemetry").getUnclippedBoundsInRoot()
+        val temp=compose.onNodeWithText("GPU 45 °C").getUnclippedBoundsInRoot()
+        assertTrue("Temperature must fit inside telemetry card",temp.bottom<=card.bottom)
+        assertTextFits("GPU 45 °C")
+        assertTextFits("À jour · à l'instant")
+        frame("native-api29-hub-v2-telemetry-only.png")
+    }
+    private fun assertTextFits(text: String) {
+        val layouts=mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithText(text,useUnmergedTree=true).performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertTrue("Expected text layout for $text",layouts.isNotEmpty())
+        assertFalse("Text must not be clipped: $text",layouts.any { it.hasVisualOverflow })
+    }
     @Test fun completeNextPageAndLaunchAreReachedByDpad() {
         var launched: String? = null
         show(onLaunch = { launched = it.packageName })

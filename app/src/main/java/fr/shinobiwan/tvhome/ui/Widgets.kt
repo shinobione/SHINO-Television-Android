@@ -24,7 +24,8 @@ import java.util.Locale
 
 @Composable fun WidgetStrip(state: HomeState, media: Media, ids: List<String>, expanded: Boolean,
     focusers: Map<String, FocusRequester>, appsFocus: FocusRequester, onFocus: (Boolean) -> Unit, onOpen: (String) -> Unit) {
-    val height = if (expanded) 160.dp else 116.dp
+    // The v2 freshness/provenance line must fit alongside all four PC sensors.
+    val height = if (expanded || state.snapshot?.telemetry != null) 176.dp else 116.dp
     Row(Modifier.fillMaxWidth().height(height).onFocusChanged { onFocus(it.hasFocus) }, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
         ids.forEachIndexed { index, id ->
             val weight = when (id) { "codex" -> 1.4f; "media" -> if (expanded) 1.35f else 1f; else -> 0.9f }
@@ -59,6 +60,7 @@ private fun bandColor(quota: Quota) = when (quotaBand(quota.remaining)) {
 private val shortReset = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.FRENCH).withZone(ZoneId.of("Europe/Paris"))
 
 @Composable private fun CodexCard(s: HomeState, expanded: Boolean) {
+    val current=s.snapshot?.codexMeta?.isCurrent(s.now) ?: (s.online && s.snapshot?.status=="AVAILABLE")
     val five = if (s.settings.demo) Quota(83.0, null) else s.snapshot?.five
     val week = if (s.settings.demo) Quota(62.0, null) else s.snapshot?.week
     if (five == null && week == null) {
@@ -68,15 +70,17 @@ private val shortReset = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.FRENCH)
         }
     } else if (!expanded) {
         Text("5 h ${five?.remaining?.toInt()?.toString() ?: "—"} %  ·  Sem. ${week?.remaining?.toInt()?.toString() ?: "—"} %", fontSize = 24.sp)
+        if(!current || !s.online) Text("En cache / périmé",fontSize=14.sp,color=Muted)
     } else {
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             QuotaValue("5 heures", five, s, Modifier.weight(1f))
             QuotaValue("Semaine", week, s, Modifier.weight(1f))
         }
     }
+    if(s.snapshot?.codexMeta!=null) Text("${s.snapshot.reliability} · ${s.snapshot.codexMeta.label(s.now,s.online)}",fontSize=13.sp,color=Muted,maxLines=1)
 }
 @Composable private fun QuotaValue(label: String, quota: Quota?, s: HomeState, modifier: Modifier) {
-    val current = s.settings.demo || s.online && s.snapshot?.status == "AVAILABLE" && quota?.isCurrent(s.snapshot.capturedAt, s.now) == true
+    val current = s.settings.demo || s.online && quota?.isCurrent(s.snapshot?.capturedAt, s.now)==true && (s.snapshot?.codexMeta?.isCurrent(s.now) ?: (s.snapshot?.status=="AVAILABLE"))
     val color = if (current && quota != null) bandColor(quota) else Muted
     Column(modifier) {
         Text(label, fontSize = 16.sp, color = Muted)
@@ -103,15 +107,15 @@ private val shortReset = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.FRENCH)
         Text(media.artist, fontSize = 17.sp, color = Muted, maxLines = 1)
     } else {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            if (media.artwork != null) Image(media.artwork.asImageBitmap(), "Pochette", Modifier.size(76.dp), contentScale = ContentScale.Fit)
+            if (media.artwork != null) Image(media.artwork.asImageBitmap(), "Pochette", Modifier.size(86.dp), contentScale = ContentScale.Fit)
             else Box(Modifier.size(64.dp).background(Color(0xFF30253E), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Text("♫", fontSize = 36.sp, color = Violet) }
             Column(Modifier.weight(1f)) {
                 Text(media.title.ifBlank { "Titre indisponible" }, fontSize = 21.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(media.artist.ifBlank { "Artiste indisponible" }, fontSize = 17.sp, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${media.source} · ${if (media.playing) "Lecture" else "Pause"}", fontSize = 15.sp, color = Mint)
+                Text("${media.source} · ${media.quality.ifBlank { playbackLabel(media) }}", fontSize = 15.sp, color = if(media.quality.isBlank())Mint else Muted,maxLines=1)
             }
         }
-        if (media.durationMs > 0) { Spacer(Modifier.height(12.dp)); Meter(media.positionMs.toFloat() / media.durationMs, Violet) }
+        if (media.durationMs != null && media.durationMs > 0 && media.positionMs != null) { Spacer(Modifier.height(8.dp)); Meter(media.positionMs.toFloat() / media.durationMs, Violet) }
     }
 }
 @Composable private fun LinkCard(s: HomeState) {
@@ -120,7 +124,8 @@ private val shortReset = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.FRENCH)
     else {
         Text("RAM ${data.ramGb?.let { String.format(Locale.FRANCE, "%.1f", it) } ?: "—"} Go", fontSize = 26.sp)
         Text("CPU ${data.cpu?.toInt()?.toString() ?: "—"} %  ·  GPU ${data.gpu?.toInt()?.toString() ?: "—"} %", fontSize = 17.sp, color = Muted)
-        Text(if (s.online) "Mesures LINK" else "En cache", fontSize = 15.sp, color = Muted)
+        Text("GPU ${data.gpuC?.let { String.format(Locale.FRANCE,"%.0f",it) } ?: "—"} °C",fontSize=16.sp,color=Muted)
+        Text(s.snapshot?.telemetryMeta?.label(s.now,s.online) ?: if (s.online) "Mesures LINK" else "En cache", fontSize = 13.sp, color = Muted,maxLines=1)
     }
 }
 
@@ -146,17 +151,21 @@ private val shortReset = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.FRENCH)
                 "media" -> {
                     Text(shownMedia.title.ifBlank { "Aucune lecture détectée" }, fontSize = 26.sp)
                     Text(shownMedia.artist, fontSize = 20.sp, color = Muted)
-                    Text("Source : ${shownMedia.source} · ${if (shownMedia.status != "AVAILABLE") "Indisponible" else if (shownMedia.playing) "Lecture" else "Pause"}", fontSize = 18.sp)
-                    Text(if (shownMedia.durationMs > 0) "Position observée : ${shownMedia.positionMs / 1000} / ${shownMedia.durationMs / 1000} s" else "Progression indisponible", fontSize = 18.sp, color = Muted)
+                    if(shownMedia.artwork!=null)Image(shownMedia.artwork.asImageBitmap(),"Pochette",Modifier.size(180.dp),contentScale=ContentScale.Fit)
+                    Text("Source : ${shownMedia.source} · ${if (shownMedia.status != "AVAILABLE") "Indisponible" else playbackLabel(shownMedia)}", fontSize = 18.sp)
+                    if(shownMedia.quality.isNotBlank())Text(shownMedia.quality,fontSize=18.sp,color=Muted)
+                    Text(if (shownMedia.durationMs != null && shownMedia.durationMs > 0 && shownMedia.positionMs != null) "Position observée : ${shownMedia.positionMs / 1000} / ${shownMedia.durationMs / 1000} s" else "Progression indisponible", fontSize = 18.sp, color = Muted)
+                    if(shownMedia.source=="PC")Text("HUB : lecture seule · commandes PC non disponibles",fontSize=16.sp,color=Muted)
                     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         if (!s.settings.demo && media.source == "TV" && media.canPlayPause) Action(if (media.playing) "Pause" else "Lecture", onToggle)
                         if (!s.settings.demo && media.source == "TV" && media.canNext) Action("Suivant", onNext)
                     }
                 }
-                "telemetry" -> Text("Mesures de la source LINK existante. Âge des capteurs inconnu ; en cas de déconnexion, valeurs en cache.", fontSize = 20.sp)
+                "telemetry" -> Text(s.snapshot?.telemetryMeta?.let { "LINK · ${it.sourceKind} · ${it.label(s.now,s.online)}\nMesure : ${it.capturedAt ?: "Indisponible"} · validité ${it.maxAgeSeconds} s" } ?: "Mesures de la source LINK existante. Âge des capteurs inconnu ; en cas de déconnexion, valeurs en cache.", fontSize = 20.sp)
             }
             Text("Météo : Open-Meteo · CC BY 4.0", fontSize = 15.sp, color = Muted)
             Action("Fermer", onClose, Modifier.focusRequester(close).testTag("close-details"))
         }
     }
 }
+private fun playbackLabel(media: Media) = when(media.playbackState) { "PLAYING"->"Lecture";"PAUSED"->"Pause";"STOPPED"->"Arrêté";else->"Indisponible" }

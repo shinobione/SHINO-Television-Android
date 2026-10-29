@@ -4,6 +4,8 @@ package fr.shinobiwan.tvhome.ui
 import android.content.Intent
 import android.provider.Settings as AndroidSettings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +26,11 @@ import androidx.tv.material3.Text
 import fr.shinobiwan.tvhome.HomeState
 import fr.shinobiwan.tvhome.HomeViewModel
 import fr.shinobiwan.tvhome.core.isLanIpv4
+import fr.shinobiwan.tvhome.data.validReaderToken
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable fun SettingsScreen(s:HomeState,model:HomeViewModel,onClose:()->Unit){
     var draft by remember { mutableStateOf(s.settings) }
@@ -32,6 +38,24 @@ import kotlinx.coroutines.delay
     var error by remember { mutableStateOf("") }
     val first=remember { FocusRequester() }
     val context=LocalContext.current
+    val scope=rememberCoroutineScope()
+    val importCa=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if(uri!=null)scope.launch {
+            try {
+                val pem=withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)!!.use { stream ->
+                        val out=java.io.ByteArrayOutputStream();val buffer=ByteArray(1024)
+                        while(true){val n=stream.read(buffer);if(n<0)break;require(out.size()+n<=16384);out.write(buffer,0,n)}
+                        out.toString("UTF-8")
+                    }
+                }
+                require(pem.contains("BEGIN CERTIFICATE") && !pem.contains("PRIVATE KEY"))
+                val certs=java.security.cert.CertificateFactory.getInstance("X.509").generateCertificates(pem.byteInputStream())
+                require(certs.size in 1..4 && certs.all { it is java.security.cert.X509Certificate && it.basicConstraints>=0 })
+                draft=draft.copy(caPem=pem);error="CA publique importée ; enregistrez les réglages."
+            } catch(_:Exception){error="Import impossible : choisissez uniquement la CA publique PEM (16 Ko maximum)."}
+        }
+    }
     val apps=s.apps.sortedWith(compareBy{val idx=draft.order.indexOf(it.packageName);if(idx<0)Int.MAX_VALUE else idx})
     BackHandler { onClose() }
     LaunchedEffect(Unit){delay(100);first.requestFocus()}
@@ -45,15 +69,24 @@ import kotlinx.coroutines.delay
         Entry("Ville · Open-Meteo",draft.city,{draft=draft.copy(city=it.take(80))})
         Text("Heure et dates : Europe/Paris · les données météo demandent Internet",color=Muted,fontSize=16.sp)
         Eyebrow("APPAIRAGE PC · HTTPS SUR LE RÉSEAU LOCAL")
+        Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
+            Action("${if(draft.protocol=="HUB_V2")"✓ " else ""}SHINO HUB v2",{draft=draft.copy(protocol="HUB_V2",host="192.168.1.195",port="8767",pin="",encryptedToken="",caPem="");token=""})
+            Action("${if(draft.protocol=="V1")"✓ " else ""}Passerelle v1",{draft=draft.copy(protocol="V1",port="8766",pin="",encryptedToken="",caPem="");token=""})
+        }
+        if(draft.protocol=="HUB_V2") {
+            Text("GET /hub/v1/snapshot · identité de lecture TV_HOME · CA + nom IP/SAN + empreinte",color=Muted,fontSize=16.sp)
+            Action(if(draft.caPem.isBlank())"Importer la CA publique du HUB (PEM)" else "CA publique importée · remplacer",{try{importCa.launch("*/*")}catch(_:Exception){error="Sélecteur de fichiers indisponible ; utilisez le champ CA ci-dessous."}})
+            Entry("CA publique PEM · saisie alternative",draft.caPem,{draft=draft.copy(caPem=it.take(16384))})
+        }
         Text("Comparer l'empreinte directement sur le PC. Aucun identifiant OpenAI ne doit être saisi ici.",color=Muted,fontSize=16.sp)
         Row(horizontalArrangement=Arrangement.spacedBy(16.dp)){
             Entry("IPv4 privée du PC",draft.host,{draft=draft.copy(host=it.trim().take(15))},Modifier.weight(2f))
             Entry("Port",draft.port,{draft=draft.copy(port=it.filter(Char::isDigit).take(5))},Modifier.weight(1f),numeric=true)
         }
         Entry("Empreinte certificat SHA-256 · 64 caractères hexadécimaux",draft.pin,{draft=draft.copy(pin=it.lowercase().replace(":","").replace(" ","").take(64))})
-        Entry(if(draft.encryptedToken.isBlank())"Secret local d'appairage (32 caractères minimum)" else "Nouveau secret · vide pour conserver l'existant",token,{token=it.take(256)},secret=true)
+        Entry(if(draft.encryptedToken.isBlank()) if(draft.protocol=="HUB_V2")"Jeton lecteur TV_HOME · 16 à 128 caractères" else "Secret local d'appairage (32 caractères minimum)" else "Nouveau secret · vide pour conserver l'existant",token,{token=it.take(256)},secret=true)
         Action("Oublier le PC et vider le cache",{
-            draft=draft.copy(host="",pin="",encryptedToken="");token="";model.save(draft)
+            draft=draft.copy(host="",pin="",encryptedToken="",caPem="");token="";model.save(draft)
         })
         Eyebrow("WIDGETS · UN À TROIS VISIBLES")
         Text("Horloge et météo restent réunies dans le bandeau principal.", fontSize=16.sp, color=Muted)
@@ -96,11 +129,12 @@ import kotlinx.coroutines.delay
         Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
             Action(if(draft.demo)"DEMO : activé" else "DEMO : désactivé",{draft=draft.copy(demo=!draft.demo)})
             Action("Paramètres Android",{try{context.startActivity(Intent(AndroidSettings.ACTION_SETTINGS))}catch(_:Exception){error="Paramètres Android indisponibles"}})
-            Action("Actualiser le PC",model::sync)
+            Action("Actualiser le PC",{model.sync()})
         }
         Text("Android ${android.os.Build.VERSION.RELEASE} · API ${android.os.Build.VERSION.SDK_INT} · ${android.os.Build.MODEL}",color=Muted,fontSize=16.sp)
         Text("DEMO affiche des quotas et un morceau fictifs identifiés. Aucun faux raccourci ni donnée matérielle simulée.",color=Muted,fontSize=16.sp)
         if(error.isNotBlank())Text(error,color=Color(0xFFFFAD79),fontSize=17.sp)
+        if(s.message.isNotBlank())Text(s.message,color=Muted,fontSize=16.sp)
         Action("Enregistrer et revenir à l'accueil",{
             val pin=draft.pin.replace(":","").replace(" ","")
             error=when{
@@ -108,7 +142,9 @@ import kotlinx.coroutines.delay
                 draft.host.isNotBlank()&&!isLanIpv4(draft.host)->"Utilisez une IPv4 privée (192.168.x.x, 10.x.x.x ou 172.16–31.x.x)."
                 draft.host.isNotBlank()&&(draft.port.toIntOrNull()?:0) !in 1024..65535->"Port invalide."
                 draft.host.isNotBlank()&&!pin.matches(Regex("[a-f0-9]{64}"))->"L'empreinte SHA-256 doit contenir 64 caractères hexadécimaux."
-                token.isNotEmpty()&&(token.length<32||!token.all{it in 'a'..'z'||it in 'A'..'Z'||it in '0'..'9'})->"Secret local alphanumérique : 32 caractères minimum."
+                draft.host.isNotBlank()&&draft.protocol=="HUB_V2"&&draft.caPem.isBlank()->"Importez la CA publique du HUB."
+                token.isNotEmpty()&&draft.protocol=="HUB_V2"&&!validReaderToken(token)->"Jeton TV_HOME : 16 à 128 caractères A-Z, a-z, 0-9, _ ou -."
+                token.isNotEmpty()&&draft.protocol=="V1"&&(token.length<32||!token.all{it in 'a'..'z'||it in 'A'..'Z'||it in '0'..'9'})->"Secret local alphanumérique : 32 caractères minimum."
                 draft.host.isNotBlank()&&draft.encryptedToken.isBlank()&&token.isBlank()->"Saisissez le secret local d'appairage."
                 else->""
             }

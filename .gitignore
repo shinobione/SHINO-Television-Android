@@ -11,3 +11,17 @@ __pycache__/
 private/
 artifacts/
 *.apk
+.kotlin/
+.idea/
+*.iml
+captures/
+.cxx/
+.externalNativeBuild/
+.env
+.env.*
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.log

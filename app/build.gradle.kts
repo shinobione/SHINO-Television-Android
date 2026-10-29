@@ -10,8 +10,8 @@ android {
         applicationId = "fr.shinobiwan.tvhome"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "2.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
@@ -23,7 +23,7 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
             it.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
-            it.systemProperty("tvhome.screenshots", rootProject.file("artifacts/v0.2/native").absolutePath)
+            it.systemProperty("tvhome.screenshots", rootProject.file("artifacts/v2/native").absolutePath)
         }
     }
 }

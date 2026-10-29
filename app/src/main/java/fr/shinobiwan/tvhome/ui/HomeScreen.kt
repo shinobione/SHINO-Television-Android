@@ -102,6 +102,8 @@ private val dateFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENC
             AppRail(apps, selected, appFocus, settingsFocus, widgetFocus.takeIf { ids.isNotEmpty() },
                 onSelected = { index -> apps.getOrNull(index)?.packageName?.let { selectedPackage = it; onAppFocused(it) } }, onLaunch = onLaunch)
             Spacer(Modifier.height(12.dp))
+            if(state.snapshot?.sampleKind in setOf("TEST","DEMO"))Text("${state.snapshot?.sampleKind} · données synthétiques du HUB",fontSize=15.sp,color=Color(0xFFFFD277))
+            if(state.message.isNotBlank())Text(state.message,fontSize=14.sp,color=Muted,maxLines=1)
             Spacer(Modifier.weight(1f))
             WidgetStrip(state, media, ids, expandedMedia, widgetFocusers, appFocus.takeIf { apps.isNotEmpty() } ?: settingsFocus,
                 onFocus = { widgetHasFocus = it }, onOpen = { details = it })

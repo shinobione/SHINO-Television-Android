@@ -1,0 +1,665 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shino:lab:snapshot:2",
+  "title": "SHINO snapshot v2 candidate - Phase 1",
+  "description": "Structural contract. lab.validate_document also enforces freshness, availability, timeline and evidence invariants.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "sampleKind"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "telemetry"
+      ]
+    },
+    {
+      "required": [
+        "media"
+      ]
+    },
+    {
+      "required": [
+        "codex"
+      ]
+    }
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 2
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sampleKind": {
+      "enum": [
+        "TEST",
+        "DEMO",
+        "LIVE"
+      ]
+    },
+    "telemetry": {
+      "$ref": "#/$defs/telemetry"
+    },
+    "media": {
+      "$ref": "#/$defs/media"
+    },
+    "codex": {
+      "$ref": "#/$defs/codex"
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "enum": [
+            "LINK",
+            "PERISCOPE",
+            "TV_HOME",
+            "LAB"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "DIRECT",
+            "HISTORY",
+            "DEMO"
+          ]
+        }
+      },
+      "required": [
+        "component",
+        "kind"
+      ]
+    },
+    "percent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "unit": {
+          "const": "percent"
+        }
+      },
+      "required": [
+        "available",
+        "value",
+        "unit"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "available": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "gib": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "unit": {
+          "const": "GiB"
+        }
+      },
+      "required": [
+        "available",
+        "value",
+        "unit"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "available": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "celsius": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": -40,
+          "maximum": 150
+        },
+        "unit": {
+          "const": "celsius"
+        }
+      },
+      "required": [
+        "available",
+        "value",
+        "unit"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "available": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "artworkReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "CONTENT_ID"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "mediaType": {
+          "enum": [
+            "image/jpeg",
+            "image/png"
+          ]
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40960
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "mediaType",
+        "bytes",
+        "width",
+        "height"
+      ]
+    },
+    "quota": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "remainingPercent",
+        "resetsAt",
+        "unit"
+      ],
+      "properties": {
+        "remainingPercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "resetsAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "unit": {
+          "const": "percent_remaining"
+        }
+      }
+    },
+    "activity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "UNVERIFIED",
+            "OBSERVED",
+            "TURN_COMPLETED",
+            "UNAVAILABLE"
+          ]
+        },
+        "observedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "evidence": {
+          "enum": [
+            "NONE",
+            "LOCAL_OBSERVATION",
+            "TERMINAL_EVENT"
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "observedAt",
+        "evidence"
+      ]
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "const": "telemetry"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "capturedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "availability": {
+          "enum": [
+            "AVAILABLE",
+            "PARTIAL",
+            "UNAVAILABLE"
+          ]
+        },
+        "freshness": {
+          "enum": [
+            "CURRENT",
+            "STALE",
+            "UNKNOWN"
+          ]
+        },
+        "maxAgeSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        },
+        "error": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "code"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "NO_DATA",
+                "SOURCE_UNAVAILABLE",
+                "SENSOR_UNAVAILABLE",
+                "UNVERIFIED"
+              ]
+            }
+          }
+        },
+        "cpuPercent": {
+          "$ref": "#/$defs/percent"
+        },
+        "gpuPercent": {
+          "$ref": "#/$defs/percent"
+        },
+        "ramUsedGiB": {
+          "$ref": "#/$defs/gib"
+        },
+        "gpuTemperatureC": {
+          "$ref": "#/$defs/celsius"
+        }
+      },
+      "required": [
+        "domain",
+        "source",
+        "capturedAt",
+        "availability",
+        "freshness",
+        "maxAgeSeconds",
+        "error",
+        "cpuPercent",
+        "gpuPercent",
+        "ramUsedGiB",
+        "gpuTemperatureC"
+      ]
+    },
+    "media": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "const": "media"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "capturedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "availability": {
+          "enum": [
+            "AVAILABLE",
+            "PARTIAL",
+            "UNAVAILABLE"
+          ]
+        },
+        "freshness": {
+          "enum": [
+            "CURRENT",
+            "STALE",
+            "UNKNOWN"
+          ]
+        },
+        "maxAgeSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        },
+        "error": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "code"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "NO_DATA",
+                "SOURCE_UNAVAILABLE",
+                "SENSOR_UNAVAILABLE",
+                "UNVERIFIED"
+              ]
+            }
+          }
+        },
+        "state": {
+          "enum": [
+            "PLAYING",
+            "PAUSED",
+            "STOPPED",
+            "NO_SESSION",
+            "UNAVAILABLE"
+          ]
+        },
+        "player": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "artist": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "album": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "positionMs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 604800000
+        },
+        "durationMs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 604800000
+        },
+        "timelineUnit": {
+          "const": "milliseconds"
+        },
+        "artwork": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "reference": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/artworkReference"
+                }
+              ]
+            }
+          },
+          "required": [
+            "available",
+            "reference"
+          ]
+        }
+      },
+      "required": [
+        "domain",
+        "source",
+        "capturedAt",
+        "availability",
+        "freshness",
+        "maxAgeSeconds",
+        "error",
+        "state",
+        "player",
+        "title",
+        "artist",
+        "album",
+        "positionMs",
+        "durationMs",
+        "timelineUnit",
+        "artwork"
+      ]
+    },
+    "codex": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "const": "codex"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "capturedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "availability": {
+          "enum": [
+            "AVAILABLE",
+            "PARTIAL",
+            "UNAVAILABLE"
+          ]
+        },
+        "freshness": {
+          "enum": [
+            "CURRENT",
+            "STALE",
+            "UNKNOWN"
+          ]
+        },
+        "maxAgeSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400
+        },
+        "error": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "required": [
+            "code"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "NO_DATA",
+                "SOURCE_UNAVAILABLE",
+                "SENSOR_UNAVAILABLE",
+                "UNVERIFIED"
+              ]
+            }
+          }
+        },
+        "fiveHour": {
+          "$ref": "#/$defs/quota"
+        },
+        "weekly": {
+          "$ref": "#/$defs/quota"
+        },
+        "reliability": {
+          "enum": [
+            "DIRECT",
+            "HISTORY",
+            "UNVERIFIED"
+          ]
+        },
+        "activity": {
+          "$ref": "#/$defs/activity"
+        }
+      },
+      "required": [
+        "domain",
+        "source",
+        "capturedAt",
+        "availability",
+        "freshness",
+        "maxAgeSeconds",
+        "error",
+        "fiveHour",
+        "weekly",
+        "reliability"
+      ]
+    }
+  }
+}

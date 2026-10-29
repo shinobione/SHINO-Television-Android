@@ -1,0 +1,282 @@
+{
+  "fixtureKind": "TEST",
+  "description": "In-process synthetic transcript. No credentials or LIVE data.",
+  "steps": [
+    {
+      "label": "TEST publish LINK",
+      "status": 201,
+      "body": {
+        "protocolVersion": 1,
+        "updated": [
+          "telemetry",
+          "media"
+        ],
+        "unchanged": []
+      }
+    },
+    {
+      "label": "TEST publish Periscope",
+      "status": 201,
+      "body": {
+        "protocolVersion": 1,
+        "updated": [
+          "codex"
+        ],
+        "unchanged": []
+      }
+    },
+    {
+      "label": "TEST read fresh",
+      "status": 200,
+      "body": {
+        "schemaVersion": 2,
+        "sampleKind": "TEST",
+        "generatedAt": "2026-10-26T12:00:00Z",
+        "telemetry": {
+          "domain": "telemetry",
+          "source": {
+            "component": "LINK",
+            "kind": "DIRECT"
+          },
+          "capturedAt": "2026-10-26T12:00:00Z",
+          "availability": "AVAILABLE",
+          "freshness": "CURRENT",
+          "maxAgeSeconds": 6,
+          "error": null,
+          "cpuPercent": {
+            "available": true,
+            "value": 20,
+            "unit": "percent"
+          },
+          "ramUsedGiB": {
+            "available": true,
+            "value": 8,
+            "unit": "GiB"
+          },
+          "gpuPercent": {
+            "available": true,
+            "value": 10,
+            "unit": "percent"
+          },
+          "gpuTemperatureC": {
+            "available": true,
+            "value": 45,
+            "unit": "celsius"
+          }
+        },
+        "media": {
+          "domain": "media",
+          "source": {
+            "component": "LINK",
+            "kind": "DIRECT"
+          },
+          "capturedAt": "2026-10-26T12:00:00Z",
+          "availability": "AVAILABLE",
+          "freshness": "CURRENT",
+          "maxAgeSeconds": 10,
+          "error": null,
+          "state": "PLAYING",
+          "timelineUnit": "milliseconds",
+          "player": "TEST_PLAYER",
+          "title": "TEST first track",
+          "artist": "TEST artist",
+          "album": "TEST album",
+          "positionMs": 42000,
+          "durationMs": 180000,
+          "artwork": {
+            "available": false,
+            "reference": null
+          }
+        },
+        "codex": {
+          "domain": "codex",
+          "source": {
+            "component": "PERISCOPE",
+            "kind": "HISTORY"
+          },
+          "capturedAt": "2026-10-26T12:00:00Z",
+          "availability": "AVAILABLE",
+          "freshness": "CURRENT",
+          "maxAgeSeconds": 900,
+          "error": null,
+          "fiveHour": {
+            "remainingPercent": 83,
+            "resetsAt": null,
+            "unit": "percent_remaining"
+          },
+          "weekly": {
+            "remainingPercent": 62,
+            "resetsAt": null,
+            "unit": "percent_remaining"
+          },
+          "reliability": "HISTORY",
+          "activity": {
+            "state": "UNVERIFIED",
+            "observedAt": null,
+            "evidence": "NONE"
+          }
+        }
+      }
+    },
+    {
+      "label": "TEST read after ten seconds",
+      "status": 200,
+      "body": {
+        "schemaVersion": 2,
+        "sampleKind": "TEST",
+        "generatedAt": "2026-10-26T12:00:10Z",
+        "telemetry": {
+          "domain": "telemetry",
+          "source": {
+            "component": "LINK",
+            "kind": "DIRECT"
+          },
+          "capturedAt": "2026-10-26T12:00:00Z",
+          "availability": "AVAILABLE",
+          "freshness": "STALE",
+          "maxAgeSeconds": 6,
+          "error": null,
+          "cpuPercent": {
+            "available": true,
+            "value": 20,
+            "unit": "percent"
+          },
+          "ramUsedGiB": {
+            "available": true,
+            "value": 8,
+            "unit": "GiB"
+          },
+          "gpuPercent": {
+            "available": true,
+            "value": 10,
+            "unit": "percent"
+          },
+          "gpuTemperatureC": {
+            "available": true,
+            "value": 45,
+            "unit": "celsius"
+          }
+        },
+        "media": {
+          "domain": "media",
+          "source": {
+            "component": "LINK",
+            "kind": "DIRECT"
+          },
+          "capturedAt": "2026-10-26T12:00:00Z",
+          "availability": "AVAILABLE",
+          "freshness": "STALE",
+          "maxAgeSeconds": 10,
+          "error": null,
+          "state": "PLAYING",
+          "timelineUnit": "milliseconds",
+          "player": "TEST_PLAYER",
+          "title": "TEST first track",
+          "artist": "TEST artist",
+          "album": "TEST album",
+          "positionMs": 42000,
+          "durationMs": 180000,
+          "artwork": {
+            "available": false,
+            "reference": null
+          }
+        },
+        "codex": {
+          "domain": "codex",
+          "source": {
+            "component": "PERISCOPE",
+            "kind": "HISTORY"
+          },
+          "capturedAt": "2026-10-26T12:00:00Z",
+          "availability": "AVAILABLE",
+          "freshness": "CURRENT",
+          "maxAgeSeconds": 900,
+          "error": null,
+          "fiveHour": {
+            "remainingPercent": 83,
+            "resetsAt": null,
+            "unit": "percent_remaining"
+          },
+          "weekly": {
+            "remainingPercent": 62,
+            "resetsAt": null,
+            "unit": "percent_remaining"
+          },
+          "reliability": "HISTORY",
+          "activity": {
+            "state": "UNVERIFIED",
+            "observedAt": null,
+            "evidence": "NONE"
+          }
+        }
+      }
+    },
+    {
+      "label": "TEST duplicate after TTL",
+      "status": 200,
+      "body": {
+        "protocolVersion": 1,
+        "updated": [],
+        "unchanged": [
+          "telemetry",
+          "media"
+        ]
+      }
+    },
+    {
+      "label": "TEST reader cannot publish",
+      "status": 403,
+      "body": {
+        "protocolVersion": 1,
+        "error": {
+          "code": "PUBLICATION_FORBIDDEN"
+        }
+      }
+    },
+    {
+      "label": "TEST status",
+      "status": 200,
+      "body": {
+        "protocolVersion": 1,
+        "ready": true,
+        "sampleKind": "TEST",
+        "domains": {
+          "telemetry": {
+            "producer": "link",
+            "producerConnection": "UNVERIFIED",
+            "capturedAt": "2026-10-26T12:00:00Z",
+            "sourceGeneratedAt": "2026-10-26T12:00:00Z",
+            "receivedAt": "2026-10-26T12:00:00Z",
+            "availability": "AVAILABLE",
+            "freshness": "STALE"
+          },
+          "media": {
+            "producer": "link",
+            "producerConnection": "UNVERIFIED",
+            "capturedAt": "2026-10-26T12:00:00Z",
+            "sourceGeneratedAt": "2026-10-26T12:00:00Z",
+            "receivedAt": "2026-10-26T12:00:00Z",
+            "availability": "AVAILABLE",
+            "freshness": "STALE"
+          },
+          "codex": {
+            "producer": "periscope",
+            "producerConnection": "UNVERIFIED",
+            "capturedAt": "2026-10-26T12:00:00Z",
+            "sourceGeneratedAt": "2026-10-26T12:00:00Z",
+            "receivedAt": "2026-10-26T12:00:00Z",
+            "availability": "AVAILABLE",
+            "freshness": "CURRENT",
+            "activityValidity": "UNSPECIFIED_BY_V2"
+          }
+        },
+        "stateBytes": 1691,
+        "stateBudget": 65536,
+        "artwork": {
+          "items": 0,
+          "bytes": 0
+        }
+      }
+    }
+  ]
+}
