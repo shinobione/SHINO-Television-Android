@@ -2,6 +2,7 @@ package fr.shinobiwan.tvhome.data
 
 import fr.shinobiwan.tvhome.core.isLanIpv4
 import org.json.JSONObject
+import org.json.JSONTokener
 
 /** Configuration transférée volontairement depuis un fichier local/USB via le sélecteur Android. */
 data class HubPairingConfig(
@@ -14,7 +15,9 @@ data class HubPairingConfig(
 
 fun parseHubPairingConfig(raw: String): HubPairingConfig {
     require(raw.toByteArray(Charsets.UTF_8).size <= 24576) { "Fichier trop volumineux" }
-    val root = JSONObject(raw.removePrefix("\uFEFF"))
+    val input = JSONTokener(raw.removePrefix("\uFEFF"))
+    val root = input.nextValue() as? JSONObject ?: throw IllegalArgumentException("Objet JSON attendu")
+    require(input.nextClean() == '\u0000') { "Contenu après le document JSON" }
     fun str(key: String): String =
         (root.get(key) as? String)?.trim() ?: throw IllegalArgumentException("Champ invalide : $key")
 

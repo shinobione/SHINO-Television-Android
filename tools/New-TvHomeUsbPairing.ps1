@@ -15,7 +15,17 @@ $cfg = Get-Content -LiteralPath $cfgPath -Raw | ConvertFrom-Json
 $hostIp = [string]$cfg.host
 $hubPort = [int]$cfg.port
 $pin = ([string]$cfg.certificateSha256).Trim().Replace(":", "").ToLowerInvariant()
-if ($hostIp -notmatch '^((10|192|172)\.[0-9]{1,3}\.)' -or $hubPort -lt 1024 -or $hubPort -gt 65535) {
+$octets = $hostIp.Split('.')
+$validIpv4 = $octets.Count -eq 4
+foreach ($octet in $octets) {
+    if ($octet -notmatch '^[0-9]{1,3}$' -or [int]$octet -gt 255 -or
+        ($octet.Length -gt 1 -and $octet.StartsWith('0'))) { $validIpv4 = $false; break }
+}
+$privateIpv4 = $validIpv4 -and (
+    [int]$octets[0] -eq 10 -or
+    ([int]$octets[0] -eq 192 -and [int]$octets[1] -eq 168) -or
+    ([int]$octets[0] -eq 172 -and [int]$octets[1] -ge 16 -and [int]$octets[1] -le 31))
+if (-not $privateIpv4 -or $hubPort -lt 1024 -or $hubPort -gt 65535) {
     throw "Adresse HUB ou port public invalide."
 }
 if ($pin -cnotmatch '^[0-9a-f]{64}$') { throw "Pin SHA256 public invalide." }

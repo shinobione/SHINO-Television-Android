@@ -57,4 +57,26 @@ class HubPairingImportTest {
             parseHubPairingConfig(config().put("unused", "x".repeat(25000)).toString())
         }
     }
+
+    @Test fun acceptsUtf8BomAndNormalizesPublicPin() {
+        val pin = "AB:".repeat(31) + "AB"
+        val parsed = parseHubPairingConfig("\uFEFF" + config().put("certificateSha256", pin).toString())
+        assertEquals("ab".repeat(32), parsed.certificateSha256)
+    }
+
+    @Test fun rejectsTrailingDocumentOrGarbage() {
+        for (suffix in listOf("{}", "trailing garbage")) {
+            assertThrows(IllegalArgumentException::class.java) {
+                parseHubPairingConfig(config().toString() + suffix)
+            }
+        }
+    }
+
+    @Test fun rejectsWrongFieldTypesMissingFieldsAndMalformedPin() {
+        for (document in listOf(config().put("version", "1"), config().put("port", "8767"),
+            config().put("host", 123), config().put("certificateSha256", "bad"),
+            config().apply { remove("readerToken") })) {
+            assertThrows(Exception::class.java) { parseHubPairingConfig(document.toString()) }
+        }
+    }
 }
