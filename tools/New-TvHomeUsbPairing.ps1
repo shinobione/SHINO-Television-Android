@@ -33,7 +33,10 @@ $caPath = [string]$cfg.caFile
 if (-not [IO.Path]::IsPathRooted($caPath)) {
     $caPath = Join-Path (Split-Path -Parent $cfgPath) $caPath
 }
-$caPem = Get-Content -LiteralPath $caPath -Raw
+# Avoid PowerShell's provider-specific note properties (PSPath, PSProvider, ...).
+# Get-Content -Raw returns a PSObject whose extra properties ConvertTo-Json
+# may serialize as an object instead of a PEM string.
+$caPem = [IO.File]::ReadAllText([IO.Path]::GetFullPath($caPath), [Text.Encoding]::UTF8)
 if (-not $caPem.Contains("BEGIN CERTIFICATE") -or $caPem.Contains("PRIVATE KEY") -or
     [Text.Encoding]::UTF8.GetByteCount($caPem) -gt 16384) {
     throw "La CA publique PEM est invalide ou trop volumineuse."
@@ -64,6 +67,13 @@ try {
         readerToken = $readerToken
     }
     $json = ConvertTo-Json -InputObject $document -Depth 3
+    # Verify the actual export contract before writing any credentials to disk.
+    $export = ConvertFrom-Json -InputObject $json
+    if ($export.caPem -isnot [string] -or
+        [string]::IsNullOrWhiteSpace($export.caPem) -or
+        [Text.Encoding]::UTF8.GetByteCount($json) -gt 24576) {
+        throw "Export invalide : caPem doit etre une chaine PEM, JSON <= 24 Kio."
+    }
     [IO.File]::WriteAllText($destination, $json, [Text.UTF8Encoding]::new($false))
     Write-Host "Fichier cree : $destination"
     Write-Host "ATTENTION : le JSON contient le jeton lecteur en clair. Ne jamais le publier sur GitHub."
