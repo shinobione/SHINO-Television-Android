@@ -10,8 +10,8 @@ android {
         applicationId = "fr.shinobiwan.tvhome"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.0.0"
+        versionCode = 4
+        versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
@@ -22,8 +22,10 @@ android {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
+            // Keep Robolectric's Android process globals out of the JVM TLS fixtures.
+            it.forkEvery = 1
             it.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
-            it.systemProperty("tvhome.screenshots", rootProject.file("artifacts/v2/native").absolutePath)
+            it.systemProperty("tvhome.screenshots", rootProject.file("artifacts/v2.0.1/native").absolutePath)
         }
     }
 }

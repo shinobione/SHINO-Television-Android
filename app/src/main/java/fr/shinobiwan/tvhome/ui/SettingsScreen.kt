@@ -26,6 +26,7 @@ import androidx.tv.material3.Text
 import fr.shinobiwan.tvhome.HomeState
 import fr.shinobiwan.tvhome.HomeViewModel
 import fr.shinobiwan.tvhome.core.isLanIpv4
+import fr.shinobiwan.tvhome.data.parseHubPairingConfig
 import fr.shinobiwan.tvhome.data.validReaderToken
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ import kotlinx.coroutines.withContext
     var draft by remember { mutableStateOf(s.settings) }
     var token by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    var importInfo by remember { mutableStateOf("") }
     val first=remember { FocusRequester() }
     val context=LocalContext.current
     val scope=rememberCoroutineScope()
@@ -56,6 +58,32 @@ import kotlinx.coroutines.withContext
             } catch(_:Exception){error="Import impossible : choisissez uniquement la CA publique PEM (16 Ko maximum)."}
         }
     }
+    val onHubFileSelected: (android.net.Uri?) -> Unit = { uri ->
+        if(uri!=null)scope.launch {
+            try {
+                val config=withContext(Dispatchers.IO) {
+                    val bytes=context.contentResolver.openInputStream(uri)?.use { stream ->
+                        val out=java.io.ByteArrayOutputStream();val buffer=ByteArray(1024)
+                        while(true){val n=stream.read(buffer);if(n<0)break;require(out.size()+n<=24576);out.write(buffer,0,n)}
+                        out.toByteArray()
+                    } ?: throw IllegalArgumentException("Fichier inaccessible")
+                    parseHubPairingConfig(String(bytes,Charsets.UTF_8))
+                }
+                // Do not persist anything until the owner chooses Enregistrer.
+                draft=draft.copy(protocol="HUB_V2",host=config.host,port=config.port,
+                    caPem=config.caPem,pin=config.certificateSha256,encryptedToken="")
+                token=config.readerToken
+                error=""
+                importInfo="Configuration HUB importée pour ${config.host}:${config.port}. Appuyez sur Enregistrer."
+            } catch(e:kotlinx.coroutines.CancellationException){throw e}
+            catch(_:Exception) {
+                importInfo=""
+                error="Import impossible : choisissez un fichier SHINO HUB valide (.json)."
+            }
+        }
+    }
+    val importHubDocument=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(),onHubFileSelected)
+    val importHubAlternative=rememberLauncherForActivityResult(ActivityResultContracts.GetContent(),onHubFileSelected)
     val apps=s.apps.sortedWith(compareBy{val idx=draft.order.indexOf(it.packageName);if(idx<0)Int.MAX_VALUE else idx})
     BackHandler { onClose() }
     LaunchedEffect(Unit){delay(100);first.requestFocus()}
@@ -75,6 +103,18 @@ import kotlinx.coroutines.withContext
         }
         if(draft.protocol=="HUB_V2") {
             Text("GET /hub/v1/snapshot · identité de lecture TV_HOME · CA + nom IP/SAN + empreinte",color=Muted,fontSize=16.sp)
+            Action("Importer configuration HUB depuis une clé USB (.json)",{
+                try { importHubDocument.launch(arrayOf("*/*")) }
+                catch(_:Exception) {
+                    try { importHubAlternative.launch("*/*") }
+                    catch(_:Exception){ error="Aucun sélecteur de fichiers disponible sur cette TV." }
+                }
+            })
+            Action("Autre explorateur de fichiers (si USB absent)",{
+                try{importHubAlternative.launch("*/*")}
+                catch(_:Exception){error="Aucun autre explorateur de fichiers disponible."}
+            })
+            if(importInfo.isNotBlank())Text(importInfo,color=Color(0xFF79DFBD),fontSize=17.sp)
             Action(if(draft.caPem.isBlank())"Importer la CA publique du HUB (PEM)" else "CA publique importée · remplacer",{try{importCa.launch("*/*")}catch(_:Exception){error="Sélecteur de fichiers indisponible ; utilisez le champ CA ci-dessous."}})
             Entry("CA publique PEM · saisie alternative",draft.caPem,{draft=draft.copy(caPem=it.take(16384))})
         }
