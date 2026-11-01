@@ -1,7 +1,13 @@
-# SHINO // TV HOME — Roadmap
+# SHINO Television Android — Roadmap
 
 **Mise à jour : 1er novembre 2026**  
-**Produit :** dashboard Android TV pour Freebox Pop, pas un launcher alternatif.
+**Projet :** SHINO Television Android — application dashboard pour Freebox Pop, pas un launcher alternatif.
+
+**Convention de nommage (à respecter) :**
+- **SHINO Television Android** = ce projet, son application pour Freebox Pop et la présente roadmap.
+- **SHINO // TV** = projet **SmallTV**, le petit écran externe ; ce nom ne désigne **pas** l'application Android de la Freebox.
+- **TV HOME** peut être mentionné uniquement comme libellé d'interface, sans remplacer le nom du projet.
+
 
 > **Attention — versions distinctes :** cette roadmap décrit l'état de l'installation locale validée le 01/11/2026, **pas** l'état des sources actuellement publiées sur la branche GitHub `main`. Le README distant décrit encore la v2.0.1. Ne pas supposer que les correctifs locaux 2.1.2 / RELAY 0.5.7 sont déjà synchronisés ici. Toute synchronisation devra comparer les bases sans écraser les sources locales récentes.
 
@@ -70,7 +76,7 @@
 
 ## 5. Décisions conservées / hors périmètre
 
-- SHINO // TV est un **dashboard**, **pas** un remplaçant du launcher Android TV ; la rangée Netflix/YouTube/etc. a été retirée volontairement.
+- SHINO Television Android est un **dashboard**, **pas** un remplaçant du launcher Android TV ; la rangée Netflix/YouTube/etc. a été retirée volontairement.
 - Pas de commandes musicales fictives, pas de faux états Codex, pas de latence réseau annoncée sans vraie mesure.
 - RAM PC affichée en **Go** ; trafic en **Mb/s**, distinct de la vitesse de liaison.
 - Aucun nouveau HUB, serveur, système de récupération ou chantier de sécurité ajouté pour une simple évolution UI.
